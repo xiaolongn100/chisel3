@@ -133,13 +133,13 @@ object ChiselStage {
     * @param gen a call-by-name Chisel module
     */
   def elaborate(gen: => RawModule): cir.Circuit = {
-    val stage = new ChiselStage {
+    val stage = new ChiselPhase {
       override val targets = Seq( Dependency[chisel3.stage.phases.Checks],
                                   Dependency[chisel3.stage.phases.Elaborate] )
     }
 
     stage
-      .execute(Array("--no-run-firrtl"), Seq(ChiselGeneratorAnnotation(() => gen)))
+      .transform(Seq(ChiselGeneratorAnnotation(() => gen), NoRunFirrtlCompilerAnnotation))
       .collectFirst {
         case ChiselCircuitAnnotation(a) => a
       }
@@ -150,7 +150,7 @@ object ChiselStage {
     * @param gen a call-by-name Chisel module
     */
   def convert(gen: => RawModule): fir.Circuit = {
-    val stage = new ChiselStage {
+    val stage = new ChiselPhase {
       override val targets = Seq(
         Dependency[chisel3.stage.phases.Checks],
         Dependency[chisel3.stage.phases.Elaborate],
@@ -161,7 +161,7 @@ object ChiselStage {
     }
 
     stage
-      .execute(Array("--no-run-firrtl"), Seq(ChiselGeneratorAnnotation(() => gen)))
+      .transform(Seq(ChiselGeneratorAnnotation(() => gen), NoRunFirrtlCompilerAnnotation))
       .collectFirst {
         case FirrtlCircuitAnnotation(a) => a
       }
